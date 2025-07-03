@@ -49,14 +49,14 @@ func main() {
 
 	var allIncidents []pagerduty.Incident
 	for {
-		resp, err := client.ListIncidentsWithContext(context.Background(), listOpts)
+		incidentResp, err := client.ListIncidentsWithContext(context.Background(), listOpts)
 		if err != nil {
 			log.Fatalf("Error fetching incidents: %v", err)
 		}
 
-		allIncidents = append(allIncidents, resp.Incidents...)
+		allIncidents = append(allIncidents, incidentResp.Incidents...)
 
-		if resp.More {
+		if incidentResp.More {
 			listOpts.Offset = uint(len(allIncidents))
 		} else {
 			break
@@ -66,6 +66,23 @@ func main() {
 	incidents, err := json.MarshalIndent(allIncidents, "", "  ")
 	if err != nil {
 		log.Fatalf("Error marshaling incidents: %v", err)
+	}
+
+	// Get Schedule for timeperiod
+	scheduleOpts := pagerduty.GetScheduleOptions{
+		Since:    lastMonth.Format(time.RFC3339),
+		Until:    now.Format(time.RFC3339),
+		TimeZone: "UTC",
+	}
+
+	scheduleResp, err := client.GetScheduleWithContext(context.Background(), "PI23PAT", scheduleOpts)
+	if err != nil {
+		log.Fatalf("Error fetching schedules: %v", err)
+	}
+
+	schedule, err := json.MarshalIndent(scheduleResp, "", "  ")
+	if err != nil {
+		log.Fatalf("Error marshaling schedule: %v", err)
 	}
 
 	oclient := openai.NewClient(openAiToken)
@@ -80,7 +97,7 @@ func main() {
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
-					Content: string(incidents),
+					Content: fmt.Sprintf("SCHEDULE:\n%s\nINCIDENTS:\n%s", string(schedule), string(incidents)),
 				},
 			},
 		},
