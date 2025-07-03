@@ -23,6 +23,11 @@ func main() {
 		log.Fatalf("set OPENAI_API_KEY environment variable")
 	}
 
+	pdScheduleId := os.Getenv("PAGERDUTY_SCHEDULE_ID")
+	if pdScheduleId == "" {
+		log.Fatalf("set PAGERDUTY_SCHEDULE_ID environment variable")
+	}
+
 	reportTemplate, err := os.ReadFile("report_template.md")
 	if err != nil {
 		log.Fatalf("Failed to read file: %v", err)
@@ -75,7 +80,7 @@ func main() {
 		TimeZone: "UTC",
 	}
 
-	scheduleResp, err := client.GetScheduleWithContext(context.Background(), "PI23PAT", scheduleOpts)
+	scheduleResp, err := client.GetScheduleWithContext(context.Background(), pdScheduleId, scheduleOpts)
 	if err != nil {
 		log.Fatalf("Error fetching schedules: %v", err)
 	}
