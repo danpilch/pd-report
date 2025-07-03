@@ -13,12 +13,26 @@ import (
 )
 
 func main() {
-	apiToken := os.Getenv("PAGERDUTY_API_TOKEN")
-	if apiToken == "" {
-		log.Fatal("Set PAGERDUTY_API_TOKEN environment variable")
+	pdToken := os.Getenv("PAGERDUTY_API_TOKEN")
+	if pdToken == "" {
+		log.Fatalf("set PAGERDUTY_API_TOKEN environment variable")
 	}
 
-	client := pagerduty.NewClient(apiToken)
+	openAiToken := os.Getenv("OPENAI_API_KEY")
+	if openAiToken == "" {
+		log.Fatalf("set OPENAI_API_KEY environment variable")
+	}
+
+	reportTemplate, err := os.ReadFile("report_template.md")
+	if err != nil {
+		log.Fatalf("Failed to read file: %v", err)
+	}
+	prompt, err := os.ReadFile("PROMPT")
+	if err != nil {
+		log.Fatalf("Failed to read file: %v", err)
+	}
+
+	client := pagerduty.NewClient(pdToken)
 
 	now := time.Now().UTC()
 	lastMonth := now.AddDate(0, -1, 0)
@@ -49,53 +63,24 @@ func main() {
 		}
 	}
 
-	b, err := json.MarshalIndent(allIncidents, "", "  ")
+	incidents, err := json.MarshalIndent(allIncidents, "", "  ")
 	if err != nil {
 		log.Fatalf("Error marshaling incidents: %v", err)
 	}
 
-	oclient := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
+	oclient := openai.NewClient(openAiToken)
 	resp, err := oclient.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model: openai.GPT4Dot1,
 			Messages: []openai.ChatCompletionMessage{
 				{
-					Role: openai.ChatMessageRoleSystem,
-					Content: `
-You are an incident response guru, your job is to take this json payload of 
-the previous month's pagerduty incidents analyse and spot trends, find metrics 
-e.g. who was paged most, find patterns in alerts etc. and create a TECHNICAL exec summary/report 
-of your findings.
-The main alert origins that create alerts are AppSignal, New Relic and Custom Alerts
-You should also analyse the on-call rotation for who was on call, 
-when and for how long and weave that into your response. Your response should be in markdown 
-format. You should include incident Supporting Data like 
-'Incident Frequency by Service/Handler', 'Incidents by Category' as tables and Conclusions and Next Steps.
-Make sure you are ACCURATE with the amount of incidents, we need to be concise
-Follow this basic format, feel free to add to but do not omit:
-PagerDuty Incident Analysis – {{Previous Month}}
-Executive Summary
-Key Metrics & Trends
-Patterns & Recurrent Pain Points
-On-Call / User Impact
-  - Most Paged/Resolving Users
-  - User Insights
-Team & Escalation
-Recommendations (can we remove some noisy alerts?)
-Supporting Data Tables
-Top 5 Alerting Services
-Top 5 Human Resolvers
-Distribution by Alert Category
-Final Thoughts
-Recommendations
-
-IMPERATIVE, analyse the description of each alert, we need to understand the alert context
-`,
+					Role:    openai.ChatMessageRoleSystem,
+					Content: fmt.Sprintf("PROMPT:\n%s\nEXAMPLE REPORT:\n%s", string(prompt), string(reportTemplate)),
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
-					Content: string(b),
+					Content: string(incidents),
 				},
 			},
 		},
