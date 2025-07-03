@@ -76,7 +76,7 @@ func main() {
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
-					Content: fmt.Sprintf("PROMPT:\n%s\nEXAMPLE REPORT:\n%s", string(prompt), string(reportTemplate)),
+					Content: fmt.Sprintf("PROMPT:\n%s\nREPORT TEMPLATE:\n%s", string(prompt), string(reportTemplate)),
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
