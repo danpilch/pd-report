@@ -12,11 +12,14 @@
 - Identifies who was paged most, on-call rotations, and alert categories
 - Generates a markdown report with tables and actionable insights
 - Uses OpenAI GPT-4.1 for natural language analysis and summary
+- **Customizable prompt and report template** for flexible report structure and tone
 
 ## Requirements
 - Go 1.24+
 - PagerDuty API token
 - OpenAI API key
+- `PROMPT` file (customizes the AI's instructions)
+- `report_template.md` file (defines the report structure)
 
 ## Setup
 1. **Clone the repository:**
@@ -37,6 +40,9 @@
    export PAGERDUTY_API_TOKEN=your_pd_token
    export OPENAI_API_KEY=your_openai_key
    ```
+4. **Customize the prompt and template (optional):**
+   - Edit the `PROMPT` file to change the AI's instructions for report generation.
+   - Edit the `report_template.md` file to change the structure or sections of the generated report.
 
 ## Usage
 Run the tool from the command line:
@@ -51,9 +57,15 @@ The tool will output a markdown-formatted executive summary of the last month's 
 - On-call rotation analysis
 - Conclusions and next steps
 
+The report structure and tone are controlled by the `PROMPT` and `report_template.md` files.
+
 ## Environment Variables
 - `PAGERDUTY_API_TOKEN` (required): PagerDuty API token with permission to list incidents
 - `OPENAI_API_KEY` (required): OpenAI API key for GPT-4.1 access
+
+## Customization
+- **PROMPT**: The instructions given to the AI for how to analyze and summarize the incident data. Edit this file to change the style, focus, or requirements of the report.
+- **report_template.md**: The markdown template that defines the structure and required sections of the report. Edit this file to add, remove, or reorder sections as needed.
 
 ## Dependencies
 - [github.com/PagerDuty/go-pagerduty](https://github.com/PagerDuty/go-pagerduty)
