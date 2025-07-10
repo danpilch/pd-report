@@ -40,7 +40,8 @@ func main() {
 	client := pagerduty.NewClient(pdToken)
 
 	now := time.Now().UTC()
-	lastMonth := now.AddDate(0, -1, 0)
+	// Get the first day of last month golang times suck
+	lastMonth := time.Now().AddDate(0, -1, 0).AddDate(0, 0, -time.Now().AddDate(0, -1, 0).Day()+1)
 
 	listOpts := pagerduty.ListIncidentsOptions{
 		Since:    lastMonth.Format(time.RFC3339),
@@ -94,7 +95,7 @@ func main() {
 	resp, err := oclient.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4Dot1,
+			Model: openai.O3,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
@@ -102,7 +103,7 @@ func main() {
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
-					Content: fmt.Sprintf("SCHEDULE:\n%s\nINCIDENTS:\n%s", string(schedule), string(incidents)),
+					Content: fmt.Sprintf("REPORT DATE RANGE:%s-%s\n\nSCHEDULE:\n%s\nINCIDENTS:\n%s", string(lastMonth.Format(time.RFC3339)), string(now.Format(time.RFC3339)), string(schedule), string(incidents)),
 				},
 			},
 		},
